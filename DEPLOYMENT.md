@@ -1,418 +1,342 @@
 # 🚀 Deployment Guide - Daily Checklist v2.0
 
-Complete guide to deploy your Daily Checklist application to production.
+## Google Apps Script Deployment Guide
+
+Complete guide to deploy your Daily Checklist application to Google Apps Script.
 
 ---
 
 ## 📋 Table of Contents
 
-1. [GitHub Pages](#github-pages)
-2. [Netlify](#netlify)
-3. [Vercel](#vercel)
-4. [CI/CD Pipeline](#cicd-pipeline)
-5. [Environment Variables](#environment-variables)
-6. [Post-Deployment](#post-deployment)
+1. [Prerequisites](#prerequisites)
+2. [Setup Google Apps Script](#setup-google-apps-script)
+3. [Upload Files](#upload-files)
+4. [Configure & Deploy](#configure--deploy)
+5. [Testing](#testing)
+6. [Troubleshooting](#troubleshooting)
 
 ---
 
-## 🌐 GitHub Pages
+## ✅ Prerequisites
 
-### Prerequisites
-- GitHub account
-- Repository with main/master branch
-
-### Deployment Steps
-
-1. **Enable GitHub Pages**:
-   ```bash
-   # Go to repository settings
-   Settings → Pages → Source → GitHub Actions
-   ```
-
-2. **Push to Main Branch**:
-   ```bash
-   git add .
-   git commit -m "Deploy to GitHub Pages"
-   git push origin main
-   ```
-
-3. **Check Deployment Status**:
-   - Go to `Actions` tab in your repository
-   - Monitor the "Deploy to GitHub Pages" workflow
-   - Once completed, your site will be live at:
-     ```
-     https://[username].github.io/[repository-name]
-     ```
-
-### Automatic Deployment
-- Every push to `main` or `master` branch triggers auto-deployment
-- GitHub Actions workflow: `.github/workflows/deploy.yml`
-
-### Custom Domain (Optional)
-1. Add `CNAME` file with your domain:
-   ```bash
-   echo "yourdomain.com" > CNAME
-   git add CNAME
-   git commit -m "Add custom domain"
-   git push
-   ```
-
-2. Configure DNS:
-   ```
-   Type: A
-   Name: @
-   Value: 185.199.108.153
-   Value: 185.199.109.153
-   Value: 185.199.110.153
-   Value: 185.199.111.153
-
-   Type: CNAME
-   Name: www
-   Value: [username].github.io
-   ```
+- Google Account
+- Access to [Google Apps Script](https://script.google.com)
+- 4 files from this repository:
+  - `Code.gs`
+  - `index.html`
+  - `styles.html`
+  - `script.html`
 
 ---
 
-## 🔷 Netlify
+## 🔧 Setup Google Apps Script
 
-### Method 1: Drag & Drop (Fastest)
+### Step 1: Create New Project
 
-1. Go to [Netlify](https://netlify.com)
-2. Sign in / Sign up
-3. Drag your project folder to Netlify Drop zone
-4. Done! Your site is live 🎉
+1. Go to [script.google.com](https://script.google.com)
+2. Click **"New project"**
+3. Name your project: **"Daily Checklist v2.0"**
 
-### Method 2: Git Integration (Recommended)
+### Step 2: Set Project Settings
 
-1. **Connect Repository**:
-   - Click "New site from Git"
-   - Connect to GitHub
-   - Select your repository
+1. Click on **Project Settings** (⚙️ icon)
+2. Check the following options:
+   - ✅ Show "appsscript.json" manifest file in editor
+   - ✅ Enable Chrome V8 runtime
 
-2. **Build Settings**:
-   ```
-   Build command: (leave empty)
-   Publish directory: .
-   ```
+---
 
-3. **Deploy**:
-   - Click "Deploy site"
-   - Wait 1-2 minutes
-   - Site URL: `https://[random-name].netlify.app`
+## 📁 Upload Files
 
-### Configuration
-- All settings are in `netlify.toml`
-- Includes:
-  - Security headers
-  - Caching rules
-  - Lighthouse performance checks
-  - HTML minification
+### Method: Manual Upload
 
-### Custom Domain
-1. Go to `Domain settings`
-2. Add custom domain
-3. Follow DNS configuration instructions
+#### Step 1: Upload Code.gs
 
-### Environment Variables (If Needed)
-```bash
-# In Netlify Dashboard
-Site settings → Build & deploy → Environment
+1. Delete default `Code.gs` content
+2. Open your local `Code.gs` file
+3. Copy all content
+4. Paste into Apps Script editor
+5. **File** → **Save** (Ctrl+S)
+
+#### Step 2: Upload HTML Files
+
+For each HTML file (`index.html`, `styles.html`, `script.html`):
+
+1. Click **"+" → HTML** file
+2. Name it exactly (without `.html` extension):
+   - `index`
+   - `styles`
+   - `script`
+3. Copy content from your local file
+4. Paste into Apps Script editor
+5. **File** → **Save** (Ctrl+S)
+
+### Final File Structure
+
+Your Apps Script project should have **4 files**:
+
+```
+Daily Checklist v2.0/
+├── Code.gs          (Server-side code)
+├── index.html       (Main HTML)
+├── styles.html      (CSS styles)
+└── script.html      (JavaScript code)
 ```
 
 ---
 
-## ▲ Vercel
+## 🚀 Configure & Deploy
 
-### Method 1: Vercel CLI
+### Step 1: Deploy as Web App
 
-1. **Install Vercel CLI**:
-   ```bash
-   npm install -g vercel
-   ```
+1. Click **Deploy** → **New deployment**
+2. Click **"Select type"** → Choose **"Web app"**
+3. Fill in deployment details:
 
-2. **Login**:
-   ```bash
-   vercel login
-   ```
+   **Description:** `Daily Checklist v2.0 - Initial Deployment`
 
-3. **Deploy**:
-   ```bash
-   vercel
-   ```
+   **Execute as:** `Me (your-email@gmail.com)`
 
-4. **Production**:
-   ```bash
-   vercel --prod
-   ```
+   **Who has access:** Choose one:
+   - `Only myself` - Private (only you)
+   - `Anyone with Google account` - Team use
+   - `Anyone` - Public access
 
-### Method 2: Git Integration
+4. Click **"Deploy"**
 
-1. Go to [Vercel](https://vercel.com)
-2. Click "New Project"
-3. Import your Git repository
-4. Configure:
-   ```
-   Framework Preset: Other
-   Root Directory: ./
-   Build Command: (leave empty)
-   Output Directory: (leave empty)
-   ```
-5. Click "Deploy"
+### Step 2: Authorize Access
 
-### Configuration
-- Settings in `vercel.json`
-- Includes security headers and caching
+1. Click **"Authorize access"**
+2. Select your Google account
+3. Click **"Advanced"** → **"Go to Daily Checklist (unsafe)"**
+4. Click **"Allow"** (grants Drive access for backups)
 
-### Custom Domain
-1. Project Settings → Domains
-2. Add your domain
-3. Configure DNS as instructed
+### Step 3: Get Your App URL
+
+1. Copy the **Web app URL**
+   - Format: `https://script.google.com/macros/s/.../exec`
+2. Save this URL - it's your app link!
+3. Click **"Done"**
 
 ---
 
-## ⚙️ CI/CD Pipeline
+## ✅ Testing
 
-### GitHub Actions Workflows
+### Test Your Deployment
 
-#### 1. Deploy Workflow
-**File**: `.github/workflows/deploy.yml`
+1. Open your Web App URL in new tab
+2. Verify features:
+   - [ ] App loads successfully
+   - [ ] Premium UI displays (glassmorphism)
+   - [ ] Can add tasks
+   - [ ] Can complete tasks (confetti animation)
+   - [ ] Can delete tasks
+   - [ ] Dark mode toggle works
+   - [ ] Stats update in real-time
+   - [ ] LocalStorage persists data after reload
+   - [ ] Filter tabs work (All/Active/Completed)
+   - [ ] Clear completed button works
 
-**Triggers**:
-- Push to main/master
-- Manual trigger (workflow_dispatch)
+### Test Google Drive Backup (Optional)
 
-**Steps**:
-1. Checkout code
-2. Validate files
-3. Build (if needed)
-4. Upload to GitHub Pages
-5. Deploy
-
-#### 2. CI Workflow
-**File**: `.github/workflows/ci.yml`
-
-**Triggers**:
-- Push to any branch
-- Pull requests to main/master
-
-**Quality Checks**:
-- ✅ HTML validation
-- ✅ JavaScript syntax check
-- ✅ File size analysis
-- ✅ Security check (XSS patterns)
-- ✅ Bug fixes verification
-- ✅ Console.log detection
-
-**Example Output**:
-```
-✅ HTML5 DOCTYPE found
-✅ JavaScript syntax valid
-✅ Bundle size acceptable (70KB)
-✅ No inline event handlers found
-✅ Bug #1: Memory leak fix verified
-✅ Bug #2: Event delegation verified
-✅ Bug #4: Quota handler verified
-✅ Bug #7: Confetti limit verified
-✅ Bug #11: Error boundary verified
-```
-
-### Status Badges
-
-Add to README.md:
-```markdown
-![Deploy](https://github.com/[username]/[repo]/actions/workflows/deploy.yml/badge.svg)
-![CI](https://github.com/[username]/[repo]/actions/workflows/ci.yml/badge.svg)
-```
+1. Add some tasks
+2. Open browser console (F12)
+3. Run: `backupToGoogleDrive()`
+4. Check your Google Drive
+5. Look for folder: `Daily Checklist Backups`
+6. Verify JSON backup file exists
 
 ---
 
-## 🔐 Environment Variables
+## 🔄 Update Deployment
 
-Currently, the app doesn't require environment variables as it's a pure static site with localStorage.
+When you make changes to code:
 
-### Future API Keys (If Adding Backend)
+### Update Live Version
 
-#### GitHub Secrets
-```bash
-Settings → Secrets and variables → Actions → New repository secret
+1. Edit files in Apps Script editor
+2. **Deploy** → **Manage deployments**
+3. Click **✏️ Edit** on active deployment
+4. **Version:** New version
+5. **Description:** Describe changes
+6. Click **"Deploy"**
+7. ✅ URL stays the same!
+
+### Test Before Deploying
+
+1. **Deploy** → **Test deployments**
+2. Gets temporary URL for testing
+3. Test thoroughly
+4. Then deploy to production
+
+---
+
+## 🌐 Share Your App
+
+### Share Options
+
+**Direct Link:**
+```
+https://script.google.com/macros/s/.../exec
 ```
 
-#### Netlify
-```bash
-Site settings → Build & deploy → Environment
-```
+**QR Code:**
+Generate QR code pointing to your URL
 
-#### Vercel
-```bash
-Project Settings → Environment Variables
+**Embed in Website:**
+```html
+<iframe
+    src="https://script.google.com/macros/s/.../exec"
+    width="100%"
+    height="800px"
+    frameborder="0">
+</iframe>
 ```
 
 ---
 
-## ✅ Post-Deployment Checklist
+## 🔐 Security Settings
 
-### 1. Verify Deployment
-- [ ] Site loads correctly
-- [ ] All features work (add, delete, complete tasks)
-- [ ] Dark mode toggle works
-- [ ] LocalStorage persistence works
-- [ ] Responsive design on mobile
-- [ ] No console errors
+### Private Use
+- **Execute as:** `Me`
+- **Who has access:** `Only myself`
+- ✅ Your data only
 
-### 2. Performance Testing
-- [ ] Lighthouse score > 90
-- [ ] First Contentful Paint < 1.8s
-- [ ] Time to Interactive < 3.8s
-- [ ] Total Blocking Time < 200ms
+### Team Use
+- **Execute as:** `User accessing the web app`
+- **Who has access:** `Anyone with Google account`
+- ✅ Each user has separate data
 
-Run Lighthouse:
-```bash
-# Chrome DevTools
-F12 → Lighthouse → Run
-```
-
-### 3. Security Testing
-- [ ] XSS protection verified
-- [ ] Security headers present
-- [ ] HTTPS enabled
-- [ ] CSP configured (if applicable)
-
-Check headers:
-```bash
-curl -I https://your-domain.com
-```
-
-### 4. Cross-Browser Testing
-- [ ] Chrome (latest)
-- [ ] Firefox (latest)
-- [ ] Safari (latest)
-- [ ] Edge (latest)
-- [ ] Mobile browsers
-
-### 5. Accessibility Testing
-- [ ] ARIA labels present
-- [ ] Keyboard navigation works
-- [ ] Screen reader compatible
-- [ ] Color contrast sufficient
-
-Test with:
-```bash
-# Chrome DevTools
-F12 → Lighthouse → Accessibility
-```
+### Public Use
+- **Execute as:** `Me`
+- **Who has access:** `Anyone`
+- ⚠️ All users share same data
 
 ---
 
-## 🔧 Troubleshooting
+## 🐛 Troubleshooting
 
-### GitHub Pages 404
-**Issue**: Site shows 404 after deployment
+### "Authorization Required" Error
 
-**Solutions**:
-1. Check `Settings → Pages → Source` is set to "GitHub Actions"
-2. Verify workflow ran successfully in Actions tab
-3. Wait 5-10 minutes for DNS propagation
+**Fix:**
+1. Re-deploy the app
+2. Authorize again
+3. Allow all requested permissions
 
-### Netlify Build Fails
-**Issue**: Build fails with error
+### "Script function not found"
 
-**Solutions**:
-1. Check `netlify.toml` syntax
-2. Verify publish directory is "."
-3. Check build logs in Netlify dashboard
+**Fix:**
+1. Verify `Code.gs` has `doGet()` function
+2. Save all files (Ctrl+S)
+3. Deploy new version
 
-### Vercel Deploy Timeout
-**Issue**: Deployment times out
+### "APP is not defined" Error
 
-**Solutions**:
-1. Check `vercel.json` syntax
-2. Ensure file sizes are reasonable
-3. Try CLI: `vercel --prod --force`
+**Fix:**
+1. Check file names:
+   - `script.html` NOT `script.html.html`
+2. Verify scriptlets in `index.html`:
+   - `<?!= include('script') ?>`
+   - `<?!= include('styles') ?>`
+3. Clear cache, reload
 
-### localStorage Not Working
-**Issue**: Data doesn't persist
+### UI Broken / Not Loading
 
-**Solutions**:
-1. Check browser's private/incognito mode (localStorage disabled)
-2. Verify HTTPS is enabled
-3. Check browser storage quota
+**Fix:**
+1. Check all files saved
+2. Verify file names (no `.html` extension in Apps Script)
+3. Open browser console (F12) for errors
+4. Re-deploy
+
+### LocalStorage Not Working
+
+**Fix:**
+1. Not in Incognito mode
+2. Browser allows localStorage
+3. Clear site data, reload
+
+### Google Drive Backup Fails
+
+**Fix:**
+1. Re-authorize app
+2. Grant Drive permissions
+3. Check **Executions** log for errors
+4. Verify `saveTasksToCloud()` function exists
 
 ---
 
 ## 📊 Monitoring
 
-### Uptime Monitoring
-Use services like:
-- [UptimeRobot](https://uptimerobot.com) (Free)
-- [Pingdom](https://pingdom.com)
-- [StatusCake](https://statuscake.com)
+### Execution Logs
 
-### Analytics (Optional)
-Add to `index.html` before `</head>`:
-```html
-<!-- Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-XXXXXXXXXX');
-</script>
-```
+1. Click **Executions** in sidebar
+2. See all function calls
+3. Check errors
+4. View execution time
+5. Monitor performance
 
-### Error Tracking (Optional)
-Consider adding:
-- [Sentry](https://sentry.io) for error tracking
-- [LogRocket](https://logrocket.com) for session replay
+### Project Logs
+
+1. Apps Script editor
+2. **View** → **Logs** (Ctrl+Enter)
+3. See `console.log()` output
+4. Debug issues
 
 ---
 
-## 🚀 Quick Deploy Commands
+## 🎯 Features Summary
 
-### GitHub Pages
-```bash
-git add .
-git commit -m "Deploy v2.0"
-git push origin main
-```
+### ✅ Implemented Features
 
-### Netlify
-```bash
-# Via CLI
-netlify deploy --prod
+**Core Features:**
+- Task CRUD operations
+- Real-time statistics
+- Filter tabs (All/Active/Completed)
+- Dark mode
+- Confetti celebration
+- Keyboard shortcuts (Ctrl+K, Escape)
+- Responsive design
 
-# Or drag & drop to netlify.app
-```
+**Bug Fixes (All 11):**
+- XSS protection via event delegation
+- Memory leak prevention (WeakMap)
+- LocalStorage quota handling
+- Race condition fixes (debouncing)
+- Input validation (3 layers)
+- Error boundaries
+- Performance optimizations
 
-### Vercel
-```bash
-# Via CLI
-vercel --prod
-
-# Or push to main branch (auto-deploy)
-```
+**Google Apps Script Features:**
+- Drive backup/restore
+- Cloud sync ready
+- Server-side functions
+- Analytics logging (optional)
 
 ---
 
-## 📚 Additional Resources
+## 📚 Resources
 
-- [GitHub Pages Docs](https://docs.github.com/en/pages)
-- [Netlify Docs](https://docs.netlify.com)
-- [Vercel Docs](https://vercel.com/docs)
-- [GitHub Actions Docs](https://docs.github.com/en/actions)
+- [Google Apps Script Docs](https://developers.google.com/apps-script)
+- [Web Apps Guide](https://developers.google.com/apps-script/guides/web)
+- [HTML Service](https://developers.google.com/apps-script/guides/html)
+- [Drive Service](https://developers.google.com/apps-script/reference/drive)
 
 ---
 
 ## 🎉 Success!
 
-Your Daily Checklist v2.0 is now live in production! 🚀
+Your Daily Checklist v2.0 is now live! 🚀
 
-**Next Steps**:
-- Share your URL with users
-- Monitor performance metrics
-- Gather user feedback
-- Plan next features
+**Web App URL:** `https://script.google.com/macros/s/.../exec`
+
+**Next Steps:**
+- Share URL with users
+- Test all features
+- Monitor logs
+- Collect feedback
+- Plan enhancements
 
 ---
 
-**Made with ❤️ by SPX | © 2025 Daily Checklist**
+**Made with ❤️ by SPX Express TVH | © 2025 Daily Checklist v2.0**  
+**Google Apps Script Edition**
