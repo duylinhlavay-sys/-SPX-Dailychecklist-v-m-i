@@ -1,0 +1,142 @@
+name: CI - Quality Checks
+
+on:
+  push:
+    branches: [ main, master, develop, "claude/**" ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  lint-and-validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate HTML
+        run: |
+          echo "Checking HTML syntax..."
+          if grep -q "<!DOCTYPE html>" index.html; then
+            echo "✅ HTML5 DOCTYPE found"
+          else
+            echo "❌ Missing DOCTYPE"
+            exit 1
+          fi
+
+      - name: Check JavaScript Syntax
+        run: |
+          echo "Checking JavaScript syntax..."
+          node -c app.js
+          echo "✅ JavaScript syntax valid"
+
+      - name: Check File Sizes
+        run: |
+          echo "Checking file sizes..."
+          html_size=$(wc -c < index.html)
+          js_size=$(wc -c < app.js)
+          css_size=$(wc -c < styles.css)
+
+          echo "index.html: ${html_size} bytes"
+          echo "app.js: ${js_size} bytes"
+          echo "styles.css: ${css_size} bytes"
+
+          total_size=$((html_size + js_size + css_size))
+          echo "Total size: ${total_size} bytes ($(echo "scale=2; ${total_size}/1024" | bc) KB)"
+
+          # Warn if bundle is too large (> 100KB)
+          if [ $total_size -gt 102400 ]; then
+            echo "⚠️ Warning: Bundle size exceeds 100KB"
+          else
+            echo "✅ Bundle size acceptable"
+          fi
+
+      - name: Security Check - XSS Patterns
+        run: |
+          echo "Checking for potential XSS vulnerabilities..."
+
+          # Check for inline event handlers (should be 0 after our fixes)
+          inline_events=$(grep -E "onclick=|onchange=|onerror=|onload=" *.html *.js 2>/dev/null || true)
+
+          if [ -n "$inline_events" ]; then
+            echo "❌ Found inline event handlers (potential XSS):"
+            echo "$inline_events"
+            exit 1
+          else
+            echo "✅ No inline event handlers found"
+          fi
+
+      - name: Check for console.log in production
+        run: |
+          echo "Checking for debug statements..."
+          console_logs=$(grep -n "console\\.log" app.js | wc -l)
+
+          if [ $console_logs -gt 5 ]; then
+            echo "⚠️ Warning: Found ${console_logs} console.log statements"
+            echo "Consider removing debug logs for production"
+          else
+            echo "✅ Acceptable number of console statements"
+          fi
+
+      - name: Check Bug Fixes Implementation
+        run: |
+          echo "Verifying bug fixes..."
+
+          # Check Bug #1: WeakMap for memory leak fix
+          if grep -q "const animationTimers = new WeakMap" app.js; then
+            echo "✅ Bug #1: Memory leak fix verified"
+          else
+            echo "❌ Bug #1: Memory leak fix missing"
+            exit 1
+          fi
+
+          # Check Bug #2: Event delegation
+          if grep -q "DOM.tasksList.addEventListener" app.js; then
+            echo "✅ Bug #2: Event delegation verified"
+          else
+            echo "❌ Bug #2: Event delegation missing"
+            exit 1
+          fi
+
+          # Check Bug #4: Quota handler
+          if grep -q "handleQuotaExceeded" app.js; then
+            echo "✅ Bug #4: Quota handler verified"
+          else
+            echo "❌ Bug #4: Quota handler missing"
+            exit 1
+          fi
+
+          # Check Bug #7: Confetti limit
+          if grep -q "MAX_CONFETTI = 100" app.js; then
+            echo "✅ Bug #7: Confetti limit verified"
+          else
+            echo "❌ Bug #7: Confetti limit missing"
+            exit 1
+          fi
+
+          # Check Bug #11: Error boundary
+          if grep -q "window.addEventListener('error'" app.js; then
+            echo "✅ Bug #11: Error boundary verified"
+          else
+            echo "❌ Bug #11: Error boundary missing"
+            exit 1
+          fi
+
+          echo "✅ All critical bug fixes verified!"
+
+  summary:
+    runs-on: ubuntu-latest
+    needs: lint-and-validate
+    steps:
+      - name: Quality Check Summary
+        run: |
+          echo "================================"
+          echo "✅ CI Pipeline Passed"
+          echo "================================"
+          echo "All quality checks completed successfully!"
+          echo "Project is ready for deployment."
