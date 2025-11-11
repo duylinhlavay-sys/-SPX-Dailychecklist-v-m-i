@@ -59,6 +59,21 @@ function setupEventListeners() {
     // Dark mode toggle
     DOM.darkModeToggle.addEventListener('click', toggleDarkMode);
 
+    // Event delegation for task list (prevents XSS + memory leaks)
+    DOM.tasksList.addEventListener('change', (e) => {
+        if (e.target.classList.contains('task-checkbox')) {
+            const taskId = parseInt(e.target.closest('.task-item').dataset.id);
+            toggleTaskComplete(taskId);
+        }
+    });
+
+    DOM.tasksList.addEventListener('click', (e) => {
+        if (e.target.closest('[data-action="delete"]')) {
+            const taskId = parseInt(e.target.closest('.task-item').dataset.id);
+            deleteTask(taskId);
+        }
+    });
+
     // Add ripple effect to buttons
     addRippleEffect();
 }
@@ -71,7 +86,30 @@ function handleAddTask(e) {
 
     const taskText = DOM.taskInput.value.trim();
 
-    if (!taskText) return;
+    // Validation: Check empty
+    if (!taskText) {
+        showToast('⚠️ Vui lòng nhập nội dung công việc', 'warning');
+        DOM.taskInput.focus();
+        return;
+    }
+
+    // Validation: Check max length (500 characters)
+    if (taskText.length > 500) {
+        showToast('⚠️ Nội dung quá dài (tối đa 500 ký tự)', 'warning');
+        DOM.taskInput.focus();
+        return;
+    }
+
+    // Validation: Check duplicate active tasks
+    const isDuplicate = APP.tasks.some(t =>
+        t.text.toLowerCase() === taskText.toLowerCase() && !t.completed
+    );
+
+    if (isDuplicate) {
+        showToast('⚠️ Công việc này đã tồn tại trong danh sách!', 'warning');
+        DOM.taskInput.focus();
+        return;
+    }
 
     const newTask = {
         id: Date.now(),
@@ -90,6 +128,7 @@ function handleAddTask(e) {
 
     // Success feedback
     playSuccessAnimation();
+    showToast('✅ Đã thêm công việc mới!', 'success');
 }
 
 function toggleTaskComplete(taskId) {
@@ -181,17 +220,18 @@ function renderTasks() {
 
     DOM.emptyState.classList.remove('show');
 
+    // Render without inline event handlers to prevent XSS
     DOM.tasksList.innerHTML = filteredTasks.map(task => `
         <div class="task-item ${task.completed ? 'completed' : ''}" data-id="${task.id}">
             <input
                 type="checkbox"
                 class="task-checkbox"
                 ${task.completed ? 'checked' : ''}
-                onchange="toggleTaskComplete(${task.id})"
+                aria-label="Mark task '${escapeHtml(task.text)}' as ${task.completed ? 'incomplete' : 'complete'}"
             >
             <span class="task-text">${escapeHtml(task.text)}</span>
             <div class="task-actions">
-                <button class="btn-delete" onclick="deleteTask(${task.id})">
+                <button class="btn-delete" data-action="delete" aria-label="Delete task '${escapeHtml(task.text)}'">
                     Xóa
                 </button>
             </div>
@@ -215,7 +255,16 @@ function updateStats() {
     updateProgressRing(completionRate);
 }
 
+// Track animation timers to prevent memory leaks
+const animationTimers = new WeakMap();
+
 function animateNumber(element, start, end, suffix = '') {
+    // Clear any existing animation for this element
+    if (animationTimers.has(element)) {
+        clearInterval(animationTimers.get(element));
+        animationTimers.delete(element);
+    }
+
     const duration = 500;
     const increment = (end - start) / (duration / 16);
     let current = start;
@@ -225,9 +274,13 @@ function animateNumber(element, start, end, suffix = '') {
         if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
             current = end;
             clearInterval(timer);
+            animationTimers.delete(element); // Cleanup
         }
         element.textContent = Math.round(current) + suffix;
     }, 16);
+
+    // Store timer reference for cleanup
+    animationTimers.set(element, timer);
 }
 
 function updateProgressRing(percentage) {
@@ -248,12 +301,7 @@ function saveTasksToStorage() {
     // Debounce saves to prevent excessive writes
     clearTimeout(saveTasksTimeout);
     saveTasksTimeout = setTimeout(() => {
-        try {
-            localStorage.setItem(APP.STORAGE_KEY, JSON.stringify(APP.tasks));
-        } catch (error) {
-            console.error('Error saving to localStorage:', error);
-            showToast('Lỗi khi lưu dữ liệu!', 'error');
-        }
+        saveTasksToStorageImmediate();
     }, 300); // 300ms debounce
 }
 
@@ -261,11 +309,70 @@ function saveTasksToStorageImmediate() {
     // Immediate save for critical operations
     try {
         clearTimeout(saveTasksTimeout);
-        localStorage.setItem(APP.STORAGE_KEY, JSON.stringify(APP.tasks));
+        const data = JSON.stringify(APP.tasks);
+
+        // Check data size (warn if > 4MB)
+        if (data.length > 4 * 1024 * 1024) {
+            showToast('⚠️ Dữ liệu quá lớn! Hãy xóa tasks cũ.', 'warning');
+        }
+
+        localStorage.setItem(APP.STORAGE_KEY, data);
+
     } catch (error) {
         console.error('Error saving to localStorage:', error);
-        showToast('Lỗi khi lưu dữ liệu!', 'error');
+
+        // Handle quota exceeded error
+        if (error.name === 'QuotaExceededError') {
+            handleQuotaExceeded();
+        } else {
+            showToast('Lỗi khi lưu dữ liệu!', 'error');
+        }
     }
+}
+
+function handleQuotaExceeded() {
+    // Auto-cleanup: Remove oldest completed tasks (20%)
+    const completedTasks = APP.tasks
+        .filter(t => t.completed)
+        .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+    const removeCount = Math.max(1, Math.floor(completedTasks.length * 0.2));
+    const tasksToRemove = completedTasks.slice(0, removeCount);
+
+    if (tasksToRemove.length === 0) {
+        // No completed tasks to remove, export everything
+        showToast('❌ Bộ nhớ đầy! Đang tự động export...', 'error');
+        exportTasksAsBackup();
+        return;
+    }
+
+    // Remove old tasks
+    APP.tasks = APP.tasks.filter(t => !tasksToRemove.includes(t));
+
+    showToast(`🗑️ Đã tự động xóa ${removeCount} tasks cũ để giải phóng bộ nhớ`, 'warning');
+
+    // Retry save
+    try {
+        localStorage.setItem(APP.STORAGE_KEY, JSON.stringify(APP.tasks));
+        renderTasks();
+        updateStats();
+    } catch (retryError) {
+        // Still failed, export as backup
+        showToast('❌ Lỗi nghiêm trọng! Đang export dữ liệu...', 'error');
+        exportTasksAsBackup();
+    }
+}
+
+function exportTasksAsBackup() {
+    const dataStr = JSON.stringify(APP.tasks, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `checklist-backup-${new Date().toISOString().slice(0,10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast('✅ Đã export backup thành công!', 'success');
 }
 
 function loadTasksFromStorage() {
@@ -288,23 +395,39 @@ function toggleDarkMode() {
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
     document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem(APP.THEME_KEY, newTheme);
+
+    // Try to save to localStorage
+    try {
+        localStorage.setItem(APP.THEME_KEY, newTheme);
+    } catch (error) {
+        console.warn('Could not save theme preference:', error);
+    }
 
     // Add transition effect
     document.body.style.transition = 'background 0.3s ease';
 }
 
 function loadThemeFromStorage() {
-    const savedTheme = localStorage.getItem(APP.THEME_KEY);
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+    try {
+        const savedTheme = localStorage.getItem(APP.THEME_KEY);
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = savedTheme || (prefersDark ? 'dark' : 'light');
 
-    document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.setAttribute('data-theme', theme);
+    } catch (error) {
+        // Fallback if localStorage is disabled or unavailable
+        console.warn('localStorage unavailable, using system preference');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+    }
 }
 
 // ========================
 // Confetti Animation
 // ========================
+let activeConfettiCount = 0;
+const MAX_CONFETTI = 100;
+
 function triggerConfetti() {
     const colors = ['#667eea', '#764ba2', '#f093fb', '#10b981', '#3b82f6', '#f59e0b', '#ef4444'];
     const confettiCount = 30;
@@ -315,6 +438,14 @@ function triggerConfetti() {
 }
 
 function createConfetti(color) {
+    // Limit max confetti for performance
+    if (activeConfettiCount >= MAX_CONFETTI) {
+        console.warn('Max confetti limit reached, skipping...');
+        return;
+    }
+
+    activeConfettiCount++;
+
     const confetti = document.createElement('div');
     confetti.className = 'confetti';
     confetti.style.left = Math.random() * 100 + '%';
@@ -327,6 +458,7 @@ function createConfetti(color) {
     // Remove after animation
     setTimeout(() => {
         confetti.remove();
+        activeConfettiCount--;  // Decrement count
     }, 3500);
 }
 
@@ -367,25 +499,29 @@ function addProgressGradient() {
 // Ripple Effect
 // ========================
 function addRippleEffect() {
-    const buttons = document.querySelectorAll('.btn-primary, .btn-clear, .filter-tab, .btn-icon');
+    // Use event delegation to support dynamic buttons
+    document.addEventListener('click', function(e) {
+        const button = e.target.closest('.btn-primary, .btn-clear, .filter-tab, .btn-icon, .btn-delete');
+        if (!button) return;
 
-    buttons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            const ripple = document.createElement('span');
-            const rect = this.getBoundingClientRect();
-            const size = Math.max(rect.width, rect.height);
-            const x = e.clientX - rect.left - size / 2;
-            const y = e.clientY - rect.top - size / 2;
+        const ripple = document.createElement('span');
+        const rect = button.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        const x = e.clientX - rect.left - size / 2;
+        const y = e.clientY - rect.top - size / 2;
 
-            ripple.style.width = ripple.style.height = size + 'px';
-            ripple.style.left = x + 'px';
-            ripple.style.top = y + 'px';
-            ripple.classList.add('ripple-effect');
+        ripple.style.width = ripple.style.height = size + 'px';
+        ripple.style.left = x + 'px';
+        ripple.style.top = y + 'px';
+        ripple.classList.add('ripple-effect');
 
-            this.appendChild(ripple);
+        // Ensure button has position relative for ripple
+        button.style.position = 'relative';
+        button.style.overflow = 'hidden';
 
-            setTimeout(() => ripple.remove(), 600);
-        });
+        button.appendChild(ripple);
+
+        setTimeout(() => ripple.remove(), 600);
     });
 }
 
@@ -556,24 +692,69 @@ function debounce(func, wait) {
 // ========================
 // Celebrate All Complete
 // ========================
+let checkAllCompleteTimeout = null;
+let hasTriggeredCelebration = false;
+
 function checkAllComplete() {
     if (APP.tasks.length > 0 && APP.tasks.every(t => t.completed)) {
+        // Only trigger once to prevent spam
+        if (hasTriggeredCelebration) return;
+        hasTriggeredCelebration = true;
+
         // Mega confetti celebration
         for (let i = 0; i < 5; i++) {
             setTimeout(() => triggerConfetti(), i * 200);
         }
         showToast('🎉 Chúc mừng! Bạn đã hoàn thành tất cả công việc!', 'success');
+
+        // Reset flag after 3 seconds
+        setTimeout(() => {
+            hasTriggeredCelebration = false;
+        }, 3000);
+    } else {
+        // Reset flag if not all complete
+        hasTriggeredCelebration = false;
     }
 }
 
-// Override toggleTaskComplete to check for all complete
+// Override toggleTaskComplete to check for all complete (with debouncing)
 const originalToggleTaskComplete = toggleTaskComplete;
 toggleTaskComplete = function(taskId) {
     originalToggleTaskComplete(taskId);
-    setTimeout(checkAllComplete, 500);
+
+    // Debounce checkAllComplete to prevent race conditions
+    clearTimeout(checkAllCompleteTimeout);
+    checkAllCompleteTimeout = setTimeout(checkAllComplete, 500);
 };
 
 // ========================
 // Start the app
 // ========================
 document.addEventListener('DOMContentLoaded', init);
+
+// ========================
+// Global Error Boundary
+// ========================
+window.addEventListener('error', (event) => {
+    console.error('Global error caught:', event.error);
+
+    // Prevent infinite loop
+    if (event.error && event.error.message && event.error.message.includes('reload')) {
+        return;
+    }
+
+    showToast('❌ Đã xảy ra lỗi! Đang tải lại...', 'error');
+
+    // Auto-recovery after 2 seconds
+    setTimeout(() => {
+        window.location.reload();
+    }, 2000);
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+    console.error('Unhandled promise rejection:', event.reason);
+    showToast('❌ Lỗi bất đồng bộ!', 'error');
+
+    // Prevent default to avoid console spam
+    event.preventDefault();
+});
