@@ -165,6 +165,10 @@ function getFilteredTasks() {
 // ========================
 // Rendering
 // ========================
+// Note: For larger datasets (>1000 tasks), consider implementing:
+// - Virtual scrolling (render only visible items)
+// - Incremental rendering (render in batches)
+// - Partial updates (update only changed DOM nodes)
 function renderTasks() {
     const filteredTasks = getFilteredTasks();
 
@@ -238,8 +242,25 @@ function updateProgressRing(percentage) {
 // ========================
 // LocalStorage Management
 // ========================
+let saveTasksTimeout = null;
+
 function saveTasksToStorage() {
+    // Debounce saves to prevent excessive writes
+    clearTimeout(saveTasksTimeout);
+    saveTasksTimeout = setTimeout(() => {
+        try {
+            localStorage.setItem(APP.STORAGE_KEY, JSON.stringify(APP.tasks));
+        } catch (error) {
+            console.error('Error saving to localStorage:', error);
+            showToast('Lỗi khi lưu dữ liệu!', 'error');
+        }
+    }, 300); // 300ms debounce
+}
+
+function saveTasksToStorageImmediate() {
+    // Immediate save for critical operations
     try {
+        clearTimeout(saveTasksTimeout);
         localStorage.setItem(APP.STORAGE_KEY, JSON.stringify(APP.tasks));
     } catch (error) {
         console.error('Error saving to localStorage:', error);
@@ -506,7 +527,7 @@ document.addEventListener('keydown', (e) => {
 // Auto-save on page unload
 // ========================
 window.addEventListener('beforeunload', () => {
-    saveTasksToStorage();
+    saveTasksToStorageImmediate(); // Use immediate save on unload
 });
 
 // ========================
