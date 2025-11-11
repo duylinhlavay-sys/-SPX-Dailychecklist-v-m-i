@@ -9,17 +9,41 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Animated Background -->
+    <div class="animated-background">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
+    </div>
+
+    <!-- Confetti Container -->
+    <div id="confettiContainer"></div>
+
     <div class="app-container">
         <!-- Header -->
         <header class="header">
             <div class="header-content">
                 <h1 class="app-title">
-                    <span class="icon">✓</span>
-                    Daily Checklist
+                    <svg class="app-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="url(#gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="3" y1="3" x2="21" y2="21">
+                                <stop offset="0%" style="stop-color:#667eea"/>
+                                <stop offset="100%" style="stop-color:#764ba2"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span class="title-text">Daily Checklist</span>
                 </h1>
                 <div class="header-actions">
                     <button id="darkModeToggle" class="btn-icon" aria-label="Toggle Dark Mode">
-                        <span class="theme-icon">🌙</span>
+                        <svg class="theme-icon sun-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/>
+                            <path d="M12 5V3M12 21V19M16.95 7.05L18.36 5.64M5.64 18.36L7.05 16.95M19 12H21M3 12H5M16.95 16.95L18.36 18.36M5.64 5.64L7.05 7.05" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <svg class="theme-icon moon-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
                     </button>
                 </div>
             </div>
@@ -29,19 +53,40 @@
         <section class="stats-section">
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-value" id="totalTasks">0</div>
-                    <div class="stat-label">Tổng công việc</div>
+                    <svg class="stat-icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15M9 5C9 6.10457 9.89543 7 11 7H13C14.1046 7 15 6.10457 15 5M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <div class="stat-content">
+                        <div class="stat-value" id="totalTasks">0</div>
+                        <div class="stat-label">Tổng công việc</div>
+                    </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value" id="completedTasks">0</div>
-                    <div class="stat-label">Đã hoàn thành</div>
+                    <svg class="stat-icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <div class="stat-content">
+                        <div class="stat-value" id="completedTasks">0</div>
+                        <div class="stat-label">Đã hoàn thành</div>
+                    </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value" id="activeTasks">0</div>
-                    <div class="stat-label">Đang làm</div>
+                    <svg class="stat-icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 8V12L15 15M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <div class="stat-content">
+                        <div class="stat-value" id="activeTasks">0</div>
+                        <div class="stat-label">Đang làm</div>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="completionRate">0%</div>
+                <div class="stat-card stat-card-progress">
+                    <div class="progress-ring">
+                        <svg class="progress-ring-svg" viewBox="0 0 120 120">
+                            <circle class="progress-ring-circle-bg" cx="60" cy="60" r="50"/>
+                            <circle class="progress-ring-circle" cx="60" cy="60" r="50" id="progressCircle"/>
+                        </svg>
+                        <div class="progress-value" id="completionRate">0%</div>
+                    </div>
                     <div class="stat-label">Tỷ lệ hoàn thành</div>
                 </div>
             </div>
@@ -53,17 +98,22 @@
             <section class="add-task-section">
                 <form id="addTaskForm" class="add-task-form">
                     <div class="input-group">
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 4V20M4 12H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
                         <input
                             type="text"
                             id="taskInput"
                             class="task-input"
-                            placeholder="Thêm công việc mới..."
+                            placeholder="Thêm công việc mới... (Ctrl + K)"
                             autocomplete="off"
                             required
                         >
                         <button type="submit" class="btn-primary">
-                            <span class="btn-text">Thêm</span>
-                            <span class="btn-icon">+</span>
+                            <span class="btn-text">Thêm công việc</span>
+                            <svg class="btn-icon-svg" viewBox="0 0 24 24" fill="none">
+                                <path d="M12 4V20M4 12H20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                            </svg>
                         </button>
                     </div>
                 </form>
@@ -73,17 +123,29 @@
             <section class="filter-section">
                 <div class="filter-tabs">
                     <button class="filter-tab active" data-filter="all">
-                        Tất cả
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M4 6H20M4 12H20M4 18H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <span>Tất cả</span>
                     </button>
                     <button class="filter-tab" data-filter="active">
-                        Đang làm
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M12 8V12L15 15M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Đang làm</span>
                     </button>
                     <button class="filter-tab" data-filter="completed">
-                        Hoàn thành
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Hoàn thành</span>
                     </button>
                 </div>
                 <button id="clearCompleted" class="btn-clear">
-                    Xóa đã hoàn thành
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M19 7L18.1327 19.1425C18.0579 20.1891 17.187 21 16.1378 21H7.86224C6.81296 21 5.94208 20.1891 5.86732 19.1425L5 7M10 11V17M14 11V17M15 7V4C15 3.44772 14.5523 3 14 3H10C9.44772 3 9 3.44772 9 4V7M4 7H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Xóa đã hoàn thành</span>
                 </button>
             </section>
 
@@ -93,9 +155,13 @@
                     <!-- Tasks will be rendered here -->
                 </div>
                 <div id="emptyState" class="empty-state">
-                    <div class="empty-icon">📝</div>
+                    <svg class="empty-icon" viewBox="0 0 200 200" fill="none">
+                        <circle cx="100" cy="100" r="80" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4" opacity="0.3"/>
+                        <path d="M70 100L90 120L130 80" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+                        <circle cx="100" cy="100" r="4" fill="currentColor" opacity="0.5"/>
+                    </svg>
                     <h3>Chưa có công việc nào</h3>
-                    <p>Hãy thêm công việc đầu tiên của bạn!</p>
+                    <p>Hãy thêm công việc đầu tiên của bạn để bắt đầu!</p>
                 </div>
             </section>
         </main>
