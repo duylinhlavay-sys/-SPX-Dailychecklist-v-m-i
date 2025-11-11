@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Daily Checklist - Quản lý công việc hàng ngày hiện đại">
+    <meta name="theme-color" content="#6366f1">
+    <title>Daily Checklist - Quản lý công việc của bạn</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="app-title">
+                    <span class="icon">✓</span>
+                    Daily Checklist
+                </h1>
+                <div class="header-actions">
+                    <button id="darkModeToggle" class="btn-icon" aria-label="Toggle Dark Mode">
+                        <span class="theme-icon">🌙</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Dashboard -->
+        <section class="stats-section">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalTasks">0</div>
+                    <div class="stat-label">Tổng công việc</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="completedTasks">0</div>
+                    <div class="stat-label">Đã hoàn thành</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="activeTasks">0</div>
+                    <div class="stat-label">Đang làm</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="completionRate">0%</div>
+                    <div class="stat-label">Tỷ lệ hoàn thành</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Add Task Form -->
+            <section class="add-task-section">
+                <form id="addTaskForm" class="add-task-form">
+                    <div class="input-group">
+                        <input
+                            type="text"
+                            id="taskInput"
+                            class="task-input"
+                            placeholder="Thêm công việc mới..."
+                            autocomplete="off"
+                            required
+                        >
+                        <button type="submit" class="btn-primary">
+                            <span class="btn-text">Thêm</span>
+                            <span class="btn-icon">+</span>
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Filter Tabs -->
+            <section class="filter-section">
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-filter="all">
+                        Tất cả
+                    </button>
+                    <button class="filter-tab" data-filter="active">
+                        Đang làm
+                    </button>
+                    <button class="filter-tab" data-filter="completed">
+                        Hoàn thành
+                    </button>
+                </div>
+                <button id="clearCompleted" class="btn-clear">
+                    Xóa đã hoàn thành
+                </button>
+            </section>
+
+            <!-- Tasks List -->
+            <section class="tasks-section">
+                <div id="tasksList" class="tasks-list">
+                    <!-- Tasks will be rendered here -->
+                </div>
+                <div id="emptyState" class="empty-state">
+                    <div class="empty-icon">📝</div>
+                    <h3>Chưa có công việc nào</h3>
+                    <p>Hãy thêm công việc đầu tiên của bạn!</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Made with ❤️ by SPX | © 2025 Daily Checklist</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
