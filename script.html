@@ -75,6 +75,22 @@ function setupEventListeners() {
     // Dark mode toggle
     DOM.darkModeToggle.addEventListener('click', toggleDarkMode);
 
+    // Footer links - prevent XSS
+    const aboutLink = document.getElementById('aboutLink');
+    const exportLink = document.getElementById('exportLink');
+    if (aboutLink) {
+        aboutLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showAbout();
+        });
+    }
+    if (exportLink) {
+        exportLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            exportTasks();
+        });
+    }
+
     // Event delegation for task list (prevents XSS + memory leaks)
     DOM.tasksList.addEventListener('change', (e) => {
         if (e.target.classList.contains('task-checkbox')) {
@@ -160,6 +176,10 @@ function toggleTaskComplete(taskId) {
         saveTasksToStorage();
         renderTasks();
         updateStats();
+
+        // Debounce checkAllComplete to prevent race conditions
+        clearTimeout(checkAllCompleteTimeout);
+        checkAllCompleteTimeout = setTimeout(checkAllComplete, 500);
     }
 }
 
@@ -733,16 +753,6 @@ function checkAllComplete() {
     }
 }
 
-// Override toggleTaskComplete to check for all complete (with debouncing)
-const originalToggleTaskComplete = toggleTaskComplete;
-toggleTaskComplete = function(taskId) {
-    originalToggleTaskComplete(taskId);
-
-    // Debounce checkAllComplete to prevent race conditions
-    clearTimeout(checkAllCompleteTimeout);
-    checkAllCompleteTimeout = setTimeout(checkAllComplete, 500);
-};
-
 // ========================
 // Start the app
 // ========================
@@ -1082,7 +1092,7 @@ function loadFromGoogleDrive() {
                     const newTasks = result.tasks.filter(function(t) { return !existingIds.has(t.id); });
 
                     APP.tasks.push.apply(APP.tasks, newTasks);
-                    saveTasks();
+                    saveTasksToStorage();
                     renderTasks();
                     updateStats();
 
